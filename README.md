@@ -9,7 +9,7 @@ Features
 📈 Designed for horizontal scalability and high throughput
 
 Tech Stack
-Backend	- Spring Boot (Java)
-Messaging	- Apache Kafka
-Caching	- Redis
-Storage	- AWS S3
+\nBackend	- Spring Boot (Java)
+\nMessaging	- Apache Kafka
+\nCaching	- Redis
+\nStorage	- AWS S3
