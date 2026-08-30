@@ -1,15 +1,34 @@
-🎬 Streaming Application
-A scalable, event-driven media streaming platform built with Spring Boot, leveraging Apache Kafka for real-time event processing, Redis for high-performance caching and session management, and AWS S3 for durable, scalable media storage.
-Features
-🚀 Spring Boot — RESTful APIs and microservice architecture for content delivery and user management
-📨 Apache Kafka — Asynchronous event streaming for playback tracking, notifications, and analytics pipelines
-⚡ Redis — In-memory caching for session data, metadata, and frequently accessed content to reduce latency
-☁️ AWS S3 — Scalable object storage for video/audio assets with support for multipart uploads and pre-signed URLs
-🔄 Event-driven architecture enabling loose coupling between services
-📈 Designed for horizontal scalability and high throughput
+# 🎬 Streaming Application
 
-Tech Stack
-\nBackend	- Spring Boot (Java)
-\nMessaging	- Apache Kafka
-\nCaching	- Redis
-\nStorage	- AWS S3
+A scalable, event-driven media streaming platform built with **Spring Boot**, leveraging **Apache Kafka** for real-time event processing, **Redis** for high-performance caching, and **AWS S3** for durable, scalable media storage.
+
+---
+
+## 📖 Overview
+
+This application provides a robust backend for a media streaming service, designed with a microservice-friendly, event-driven architecture. It handles content delivery, real-time event processing, caching, and scalable file storage — making it suitable for high-throughput streaming platforms.
+
+---
+
+## ✨ Features
+
+- 🚀 **Spring Boot REST APIs** for content delivery, user management, and playback control
+- 📨 **Apache Kafka** for asynchronous event streaming — playback tracking, notifications, and analytics
+- ⚡ **Redis Caching** for session management and low-latency access to frequently requested data
+- ☁️ **AWS S3 Integration** for scalable storage of video/audio assets, with support for multipart uploads and pre-signed URLs
+- 🔄 **Event-Driven Architecture** enabling loose coupling and independent scalability of services
+- 📈 Built for **horizontal scalability** and high concurrent throughput
+
+---
+
+## 🛠️ Tech Stack
+
+| Layer            | Technology         |
+|-------------------|---------------------|
+| Backend           | Spring Boot (Java)  |
+| Messaging Queue   | Apache Kafka        |
+| Caching           | Redis               |
+| Object Storage    | AWS S3              |
+| Build Tool        | Maven / Gradle      |
+
+---
