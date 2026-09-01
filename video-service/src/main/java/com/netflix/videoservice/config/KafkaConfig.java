@@ -1,5 +1,33 @@
 package com.netflix.videoservice.config;
 
+import org.apache.kafka.clients.admin.NewTopic;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.kafka.config.TopicBuilder;
+/**
+ * Setting kafka config
+ * 1. Adding new Topic when video is uploaded
+ * 2. Adding new Topic when video is encoding
+ * 
+ */
+
+@Configuration
 public class KafkaConfig {
+
+    @Bean
+    public NewTopic videoUploadedTopic(){
+        return TopicBuilder.name("video.uploaded")
+        .partitions(3)
+        .replicas(1)
+        .build();
+    }
+
+    @Bean
+    public NewTopic videoEncodedTopic(){
+        return TopicBuilder.name("video.encoded")
+        .partitions(3)
+        .replicas(1)
+        .build();
+    }
 
 }
