@@ -1,7 +1,9 @@
 package com.netflix.encodingservice.service;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.List;
@@ -15,8 +17,10 @@ import com.netflix.encodingservice.event.VideoUploadedEvent;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
+import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
 @Service
 @Slf4j
@@ -133,6 +137,44 @@ public class EncodingService {
 
     }
 
+    private void uploadEncodedFileToS3(String localDir, String s3prefix) {
+        File dir = new File(localDir);
+        uploadDirectoryToS3(dir, localDir, s3prefix);
+    }
+    
+    /**
+     * Uploaded local file to S3 directory
+     * @param dir
+     * @param baseDir
+     * @param s3prefix
+     */
+    private void uploadDirectoryToS3(File dir, String baseDir, String s3prefix) {
+        for(File file : dir.listFiles()){
+            if(file.isDirectory()){
+                uploadDirectoryToS3(dir, baseDir, s3prefix);
+            } else {
+                String relativePath = file.getAbsolutePath()
+                .substring(baseDir.length() + 1)
+                .replace("\\", "/");
+
+                String s3Key = s3prefix + relativePath;
+
+                String contentType = file.getName().endsWith(".m3u8")
+                ? "application/x-mpegURL"
+                : "video/MP21";
+
+                PutObjectRequest putObjectRequest = PutObjectRequest.builder()
+                .bucket(bucketName)
+                .key(s3Key)
+                .contentType(contentType)
+                .build();
+
+                s3Client.putObject(putObjectRequest, RequestBody.fromFile(file));
+                log.debug("uploaded : " + s3Key);
+            }
+        }
+    }
+
     /**
      * Download file from s3 to local path
      * 
@@ -186,6 +228,10 @@ public class EncodingService {
 
     }
 
+    /**
+     * Generate master playlist that references all quality playlist
+     * This is the file, the video player downloads first
+     */
     private void generateMasterPlayList(String masterPlayListPath) throws IOException{
 
         StringBuilder master = new StringBuilder();
@@ -214,5 +260,22 @@ public class EncodingService {
 
         Files.writeString(Paths.get(masterPlayListPath), master.toString()); 
     }
+
+    private void cleanUpTempFile(String jobPath){
+        try{
+            Path dirPath = Paths.get(jobPath);
+            if(Files.exists(dirPath)){
+                Files.walk(dirPath)
+                .sorted(java.util.Comparator.reverseOrder())
+                .map(Path::toFile)
+                .forEach(File::delete);
+                log.info("TempFiles cleaned up for jobs : {}", jobPath);
+            }
+        } catch (IOException e){
+            log.warn("Failed to delete temp files : {}", e.getMessage());
+        }
+    }
+
+
 
 }
