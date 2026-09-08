@@ -1,9 +1,6 @@
 package com.netflix.videoservice.controller;
 
 import java.io.IOException;
-import java.net.http.HttpResponse;
-
-import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
