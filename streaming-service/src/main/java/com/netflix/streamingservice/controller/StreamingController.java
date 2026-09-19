@@ -54,7 +54,7 @@ public class StreamingController {
      * Server signed m3u8 playlist content
      * Called by HLS player for each quality playlist
      */
-/*     public ResponseEntity<String> getSignedPlaylist(
+     public ResponseEntity<String> getSignedPlaylist(
         @PathVariable String movieId,
         @RequestParam String path
     ){
@@ -62,5 +62,5 @@ public class StreamingController {
         return ResponseEntity.ok()
         .header("Content-type", "application/x-mpegURL")
         .body(signedPlayList);
-    }*/
+    }
 }

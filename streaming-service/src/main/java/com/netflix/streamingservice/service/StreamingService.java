@@ -1,6 +1,10 @@
 package com.netflix.streamingservice.service;
 
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
 import java.time.Duration;
+import java.util.stream.Collectors;
+
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
@@ -9,7 +13,10 @@ import com.netflix.streamingservice.dto.StreamingResponse;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import software.amazon.awssdk.core.ResponseInputStream;
+import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
+import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 import software.amazon.awssdk.services.s3.presigner.model.GetObjectPresignRequest;
 
@@ -18,6 +25,7 @@ import software.amazon.awssdk.services.s3.presigner.model.GetObjectPresignReques
 @Service
 public class StreamingService {
 
+    private final S3Client s3Client;
     private final S3Presigner presigner;
 
     private final RedisTemplate<String, String> redisTemplate;
@@ -87,9 +95,67 @@ public class StreamingService {
         .build();
     }
 
-/*     public String getSignedPlaylist(String movieId, String playlistPath){
+    /**
+     * This is the key method that makes everything secured.
+     */
+    public String getSignedPlaylist(String movieId, String playlistPath){
 
-    }*/
+        // Get basepath for this playlist
+        String basePath = playlistPath.substring(0, 
+            playlistPath.lastIndexOf("/") + 1);
+
+        // Read m3u8 content from S3
+        String m3u8Content = readFromS3(playlistPath);
+
+        // Rewrite each line that is a segment or playlist reference
+        String signedContent = rewriteM3u8SignedUrls(
+            m3u8Content, basePath
+        );
+
+        return signedContent;        
+    }
+
+    private String rewriteM3u8SignedUrls(String m3u8Content, String basePath){
+
+        StringBuilder rewritten = new StringBuilder();
+
+        for(String line : m3u8Content.split("\n")){
+            String trimmed = line.trim();
+
+            // Skip empty lines and comments
+            if(trimmed.isEmpty() || trimmed.startsWith("#")){
+                rewritten.append(line).append("\n");
+                continue;
+            }
+
+            // This is a segment or playlist reference
+            // Build full S3 Key and Sign it
+            String fullKey = basePath + trimmed;
+            String signedUrl = generatePresignedUrl(fullKey);
+
+            rewritten.append(signedUrl).append("\n");
+        }
+
+        return rewritten.toString();
+        
+    }
+
+    /**
+     * 
+     * Read file content from S3
+     */
+    private String readFromS3(String s3Key){
+        GetObjectRequest getObjectRequest = GetObjectRequest.builder()
+        .bucket(bucketName)
+        .key(s3Key)
+        .build();
+
+        ResponseInputStream<GetObjectResponse> response = s3Client.getObject(getObjectRequest);
+
+        return new BufferedReader(new InputStreamReader(response))
+        .lines()
+        .collect(Collectors.joining("\n"));
+    }
    
     /**
      * Generate a presigned URL for S3 object
