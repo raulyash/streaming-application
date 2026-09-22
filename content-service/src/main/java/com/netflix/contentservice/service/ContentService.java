@@ -87,7 +87,7 @@ public class ContentService {
     }
 
     public List<MovieResponse> searchMovies(String title) {
-        return movieRepository.searchMovies(title)
+        return movieRepository.findByTitleContainingIgnoreCase(title)
                 .stream()
                 .map(this::mapToResponse)
                 .toList();
@@ -114,6 +114,16 @@ public class ContentService {
         movie.setVideoStatus(VideoStatus.READY);
         movieRepository.save(movie);
         log.info("Movie {}, is ready for streaming..", movieId);
+    }
+
+    /**
+     * Method to uploaded video status of the uploaded movie
+     */
+    public void updateVideoStatus(String movieId, VideoStatus videoStatus){
+        Movie movie = movieRepository.findById(movieId).orElseThrow(
+            ()-> new RuntimeException("Movie not found: " + movieId));
+        movie.setVideoStatus(videoStatus);
+        movieRepository.save(movie);
     }
 
 }

@@ -10,6 +10,7 @@ import java.util.List;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.kafka.core.KafkaTemplate;
+
 import org.springframework.stereotype.Service;
 
 import com.netflix.encodingservice.event.VideoEncodedEvent;
@@ -31,13 +32,13 @@ public class EncodingService {
 
     private final KafkaTemplate<String, VideoEncodedEvent> kafkaTemplate;
 
-    @Value("${aws.S3.bucket-name}")
+    @Value("${aws.s3.bucket-name}")
     private String bucketName;
 
     @Value("${ffmpeg.path}")
     private String ffmpegPath;
 
-    @Value("${encoding.base-path}")
+    @Value("${encoding.temp-dir}")
     private String basePath;
 
     private static final String VIDEO_ENCODED_TOPIC = "video.encoded";
@@ -63,7 +64,7 @@ public class EncodingService {
      * @throws IOException
      */
     public void encodeEvent(VideoUploadedEvent event) throws IOException {
-        log.info("starting encoding platform for movie : {}", event.getMovieId());
+        log.info("starting encoding pipeline for movie : {}", event.getMovieId());
 
         // Create a unique path for a movie
         String jobPath = basePath + "/" + event.getMovieId();
@@ -74,7 +75,8 @@ public class EncodingService {
             Files.createDirectories(Paths.get(jobPath + "/encoded"));
 
             // Step 1 : Download raw video from S3
-            String localVideoPath = jobPath + "raw_video.mp4";
+            String localVideoPath = jobPath + "/raw_video.mp4";
+            System.out.println("inn??");
             downloadFromS3(event.getVideoKey(), localVideoPath);
             log.info("Video downloaded to path : {}", localVideoPath);
 
@@ -85,8 +87,9 @@ public class EncodingService {
                 int bitrate = qualities[1];
                 int height = qualities[2];
 
-                String qualityDir = jobPath + "/encoded" + height + "p";
+                String qualityDir = jobPath + "/encoded/" + height + "p";
                 Files.createDirectories(Paths.get(qualityDir));
+                System.out.println("qualityDir :: " + qualityDir);
                 encodeToHls(localVideoPath, qualityDir, width, height, bitrate);
                 log.info("Encoded {}p video.", height);   
             }
@@ -102,7 +105,7 @@ public class EncodingService {
             log.info("All encoded files uploaded to S3");
 
             // Step 6. Publish Video Encoded successful event
-            String masterPlayListKey = encodedPrefix + "master.m8u8";
+            String masterPlayListKey = encodedPrefix + "master.m3u8";
             String hlsUrl = "https://" + bucketName + "s3.amazonsws.com/" + masterPlayListKey;
 
             VideoEncodedEvent videoEncodedEvent = VideoEncodedEvent.builder()
@@ -117,7 +120,7 @@ public class EncodingService {
             log.info("videoEncodedEvent published successully for movie : {}", videoEncodedEvent.getMovieId());
 
         } catch (Exception e) {
-            log.info("encoding event failed for movie : {}", event.getMovieId(), e.getMessage());
+            log.info("encoding event failed for movie : {}, {}", event.getMovieId(), e.getMessage());
 
             // creating a failure event
             VideoEncodedEvent videoEncodedEvent = VideoEncodedEvent.builder()
@@ -151,7 +154,7 @@ public class EncodingService {
     private void uploadDirectoryToS3(File dir, String baseDir, String s3prefix) {
         for(File file : dir.listFiles()){
             if(file.isDirectory()){
-                uploadDirectoryToS3(dir, baseDir, s3prefix);
+                uploadDirectoryToS3(file, baseDir, s3prefix);
             } else {
                 String relativePath = file.getAbsolutePath()
                 .substring(baseDir.length() + 1)
@@ -184,8 +187,9 @@ public class EncodingService {
         .bucket(bucketName)
         .key(s3Key)
         .build();
-
+System.out.println("?????");
         s3Client.getObject(getObjectRequest, Paths.get(localPath));
+        System.out.println("Here?????");
     }
 
     /**
@@ -209,13 +213,14 @@ public class EncodingService {
             "-b:a", "128k",   // audio bitrate
             "-hls_time", "10",    // hls video segment
             "-hls_list_size", "0",  // 
-            "-hls_segment_file_name", segmentPath,  // segment file name
+            "-hls_segment_filename", segmentPath,  // segment file name
             "-f", "hls",    // format to hls
             playlistPath    // playlist path
         );
 
         ProcessBuilder processBuilder = new ProcessBuilder(commands);
         processBuilder.redirectErrorStream(true);
+        processBuilder.inheritIO(); //enabled console logging for ffmpeg
         Process process = processBuilder.start();
 
         int exitCode = process.waitFor();
@@ -223,8 +228,6 @@ public class EncodingService {
         if(exitCode != 0){
             throw new RuntimeException("Ffmpeg processing failed with exitCode : " + exitCode);
         }
-
-        
 
     }
 

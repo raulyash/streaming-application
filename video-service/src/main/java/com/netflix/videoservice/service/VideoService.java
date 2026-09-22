@@ -57,6 +57,7 @@ public class VideoService {
         // S3 bucket upload setup
         String videoKey = "raw/"+ movieId + "/" + UUID.randomUUID() + file.getOriginalFilename();
 
+        log.info("videoKey : {}", videoKey);
         PutObjectRequest putObjectRequest = PutObjectRequest.builder()
         .key(videoKey)
         .bucket(bucketName)

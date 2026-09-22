@@ -38,9 +38,11 @@ public class StreamingController {
         @PathVariable String movieId
     ){
         log.info("Streaming request for movie: {}", movieId);
+        System.out.println("MASTER_PLAYLIST_KEY_PREFIX + movieId: " + MASTER_PLAYLIST_KEY_PREFIX + movieId);
         String playlistKey = redisTemplate.opsForValue()
         .get(MASTER_PLAYLIST_KEY_PREFIX + movieId);
-
+        System.out.println(redisTemplate.opsForValue()
+        .get(MASTER_PLAYLIST_KEY_PREFIX + movieId));
         if(playlistKey == null){
             return ResponseEntity.notFound().build();
         }

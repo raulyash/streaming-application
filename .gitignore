@@ -1,0 +1,19 @@
+# macOS metadata
+.DS_Store
+
+# Maven build output
+**/target/
+
+# Runtime logs
+logs/
+**/logs/
+
+# Local media and temporary encoding output
+*.mp4
+*.m3u8
+*.ts
+
+# Local environment files
+.env
+.env.*
+!.env.example
